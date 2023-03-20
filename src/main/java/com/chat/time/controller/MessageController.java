@@ -1,20 +1,30 @@
 package com.chat.time.controller;
 
-import com.chat.time.message.Message;
+import com.chat.time.model.Message;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class MessageController {
 
-    @MessageMapping("/status")
-    @SendTo("/topic/messages")
-    public Message sendMessage(Message message, @Header("simpSessionId") String sessionId) {
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
 
-        //Do something
-        return new Message("Message with text : " + message.getText()
-                + " received ", " from " + message.getName());
+    @MessageMapping("/message")
+    @SendTo("/chatroom/public")
+    public Message recievePublicMessage(@Payload Message message) {
+        return message;
+    }
+
+    @MessageMapping("/private-message")
+    public Message recievePrivateMessage(@Payload Message message){
+
+        simpMessagingTemplate.convertAndSendToUser(message.getRecieverName(), "/private", message);
+        return message;
     }
 }
